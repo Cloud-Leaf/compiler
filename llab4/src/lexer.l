@@ -1,7 +1,7 @@
 %option noyywrap
 %{
     /*
-    * You will need to comment this line in lab5.
+    * You will need to comment this line in lab5./
     */
     #define ONLY_FOR_LEX
     
