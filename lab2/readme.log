@@ -1,0 +1,6 @@
+calc.y
+       |  bison -d calc.y
+    calc.tab.c
+    calc.tab.h
+       |  gcc calc.tab.c -o calc
+    calc
