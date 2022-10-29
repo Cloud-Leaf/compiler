@@ -1,7 +1,7 @@
 %option noyywrap
 %{
     /*
-    * You will need to comment this line in lab5./
+    * You will need to comment this line in lab5.
     */
     #define ONLY_FOR_LEX
     
@@ -13,13 +13,13 @@
 
     #define YY_NO_UNPUT
     #define YY_NO_INPUT
-    #include <string>
-    #include <vector>
     #ifdef ONLY_FOR_LEX
     #include <ostream>
     #include <fstream>
     #include <iostream>
-    #include <math.h>
+    #include <string>
+    #include <vector>
+    #include <cmath>
     using namespace std;
     extern FILE *yyin; 
     extern FILE *yyout;
@@ -34,16 +34,16 @@
     
     class Node{
     public:
-        string idname;
-        int scope_num;
+        string idname;//ID
+        int scope_num;//符号作用域
     };
-    int l_num = 0;
-    int r_num = 0;
-    int id_count = 0;
-    int scope_num = 0;
-    vector<int> a;
+    int l_num = 0;//左括号序号
+    int r_num = 0;//右括号序号
+    int id_count = 0;//层数
+    int scope_num = 0;//作用域数
+    vector<int> a;//作用域维护
     
-    Node table[1000];
+    Node table[1000];//符号表
     
 %}
 HEX (0x[1-9|A-F|a-f][0-9|A-F|a-f]*|0x0)
@@ -53,7 +53,7 @@ ID [[:alpha:]_][[:alpha:][:digit:]_]*
 char ('.')
 EOL (\r\n|\n|\r)
 WHITE [\t ]
-linecomment (\/\/.*|\/\/.*)
+linecomment (\/\/.*)
 commentbegin "/*"
 commentelement .|\n
 commentend "*/"
@@ -61,13 +61,9 @@ commentend "*/"
 %x BLOCKCOMMENT
 
 %%
-
-
 {linecomment} {
     #ifdef ONLY_FOR_LEX
         string a = yytext;
-        string temp = "linecomment\t" + a + "\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
     #else 
         return linecomment;
     #endif
@@ -77,14 +73,7 @@ commentend "*/"
     #ifdef ONLY_FOR_LEX
         BEGIN BLOCKCOMMENT;
         string a = yytext;
-
-        while(a.find('\n') != a.npos)
-        {
-            yylineno++;
-            a.replace(a.find('\n'),1,"");
-        }
-        string temp = "commentbegin\t/*\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        if(a.find('\n') != a.npos)yylineno++;
     #else 
         return commentbegin;
     #endif
@@ -93,13 +82,7 @@ commentend "*/"
 <BLOCKCOMMENT>{commentend} {
     #ifdef ONLY_FOR_LEX
         string a = yytext;
-        if(a.find("\n") != a.npos)
-        {
-            yylineno++;
-            a.replace(a.find("\n"),1,"");
-        }
-        string temp = "commentend\t" + a + "\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+         if(a.find("\n") != a.npos)yylineno++;
         BEGIN INITIAL;
     #else 
         return commentend;
@@ -109,13 +92,7 @@ commentend "*/"
 <BLOCKCOMMENT>{commentelement} {
     #ifdef ONLY_FOR_LEX
         string a = yytext;
-        if(a.find('\n') != a.npos)
-        {
-            yylineno++;
-            a.replace(a.find('\n'),1,"");
-        }
-        string temp = "commentelement\t" + a + "\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        if(a.find("\n") != a.npos)yylineno++;
     #else 
         return commentelement;
     #endif
@@ -128,277 +105,242 @@ commentend "*/"
     *   Q2: What is "INT" actually?
     */
     #ifdef ONLY_FOR_LEX
-        string temp = "INT\tint\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("INT\t\tint\t\t"+to_string(yylineno));
     #else
         return INT;
     #endif
 }
-"char" {
-    #ifdef ONLY_FOR_LEX        
-        string temp = "CHAR\tchar\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
-    #else
-        return CHAR;
-    #endif
-}
-"while" {
+"float" {
     #ifdef ONLY_FOR_LEX
-        string temp = "WHILE\twhile\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("FLOAT\t\tfloat\t\t"+to_string(yylineno));
     #else
-        return WHILE;
-    #endif
-}
-"break" {
-    #ifdef ONLY_FOR_LEX
-        string temp = "BREAK\tbreak\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
-    #else
-        return BREAK;
-    #endif
-}
-"continue" {
-    #ifdef ONLY_FOR_LEX
-        string temp = "CONTINUE\tcontinue\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
-    #else
-        return CONTINUE;
-    #endif
+        return FLOAT;
+    #endif 
 }
 "const" {
     #ifdef ONLY_FOR_LEX
-        string temp = "CONST\tconst\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("CONST\t\tconst\t\t"+to_string(yylineno));
     #else
         return CONST;
-    #endif
-}
-"new" {
-    #ifdef ONLY_FOR_LEX
-        string temp = "NEW\tnew\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
-    #else
-        return NEW;
-    #endif
-}
-"delete" {
-    #ifdef ONLY_FOR_LEX
-        string temp = "DELETE\tdelete\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
-    #else
-        return DELETE;
-    #endif
-}
-"using" {
-    #ifdef ONLY_FOR_LEX
-        string temp = "USING\tusing\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
-    #else
-        return USING;
-    #endif
-}
-"namespace" {
-    #ifdef ONLY_FOR_LEX
-        string temp = "NAMESPACE\tnamespace\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
-    #else
-        return namespace;
-    #endif
+    #endif 
 }
 "void" {
     #ifdef ONLY_FOR_LEX
-        string temp = "VOID\tvoid\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("VOID\t\tvoid\t\t"+to_string(yylineno));
     #else
         return VOID;
     #endif 
 }
+"char" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("CHAR\t\tchar\t\t"+to_string(yylineno));
+    #else
+        return CHAR;
+    #endif 
+}
+"while" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("WHILE\twhile\t"+to_string(yylineno));
+    #else
+        return WHILE;
+    #endif 
+}
+"for" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("FOR\tfor\t"+to_string(yylineno));
+    #else
+        return FOR;
+    #endif 
+}
+"break" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("BREAK\tbreak\t"+to_string(yylineno));
+    #else
+        return BREAK;
+    #endif 
+}
+"continue" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("CONTINUE\tcontinue\t"+to_string(yylineno));
+    #else
+        return CONTINUE;
+    #endif 
+}
 "if" {
     #ifdef ONLY_FOR_LEX
-        string temp = "IF\tif\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("IF\tif\t"+to_string(yylineno));
     #else
         return IF;
     #endif
 };
 "else" {
     #ifdef ONLY_FOR_LEX
-        string temp = "ELSE\telse\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("ELSE\telse\t"+to_string(yylineno));
     #else
         return ELSE;
     #endif
 };
 "return" {
     #ifdef ONLY_FOR_LEX
-        string temp = "RETURN\treturn\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("RETURN\treturn\t"+to_string(yylineno));
     #else
         return RETURN;
     #endif
 }
-
 "==" {
     #ifdef ONLY_FOR_LEX
-        string temp = "EQUAL\t==\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("EQUAL\t==\t"+to_string(yylineno));
     #else
         return EQUAL;
     #endif
 }
-"=" {
-    #ifdef ONLY_FOR_LEX
-        string temp = "ASSIGN\t=\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
-    #else
-        return ASSIGN;
-    #endif
-}
 "!=" {
     #ifdef ONLY_FOR_LEX
-        string temp = "UNEQUAL\t!=\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("UNEQUAL\t!=\t"+to_string(yylineno));
     #else
         return UNEQUAL;
     #endif
 }
 "!" {
     #ifdef ONLY_FOR_LEX
-        string temp = "AGAINST\t!\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("AGAINST\t!\t"+to_string(yylineno));
     #else
         return AGAINST;
     #endif
 }
-"*" {
+"&&" {
     #ifdef ONLY_FOR_LEX
-        string temp = "STAR\t*\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("LOGICAND\t!\t"+to_string(yylineno));
     #else
-        return STAR;
+        return LOGICAND;
+    #endif
+}
+"||" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("LOGICOR\t!\t"+to_string(yylineno));
+    #else
+        return LOGICOR;
+    #endif
+}
+">" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("MORE\t>\t"+to_string(yylineno));
+    #else
+        return MORE;
     #endif
 }
 ">=" {
     #ifdef ONLY_FOR_LEX
-        string temp = "GTE\t>=\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("GTE\t>=\t"+to_string(yylineno));
     #else
         return GTE;
     #endif
 }
+"=" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("ASSIGN\t=\t"+to_string(yylineno));
+    #else
+        return ASSIGN;
+    #endif
+}
 "<=" {
     #ifdef ONLY_FOR_LEX
-        string temp = "LTE\t<=\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("LTE\t<=\t"+to_string(yylineno));
     #else
         return LTE;
     #endif
 }
 "<" {
     #ifdef ONLY_FOR_LEX
-        string temp = "LESS\t<\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("LESS\t<\t"+to_string(yylineno));
     #else
         return LESS;
     #endif
 }
-">" {
-    #ifdef ONLY_FOR_LEX
-        string temp = "MORE\t>\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
-    #else
-        return MORE;
-    #endif
-}
-"," {
-    #ifdef ONLY_FOR_LEX
-        string temp = "COMMA\t,\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
-    #else
-        return COMMA;
-    #endif
-}
-":" {
-    #ifdef ONLY_FOR_LEX
-        string temp = "COLON\t:\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
-    #else
-        return COLON;
-    #endif
-}
-"'" {
-    #ifdef ONLY_FOR_LEX
-        string temp = "QUOTATION\t'\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
-    #else
-        return QUOTATION;
-    #endif
-}
 "+" {
     #ifdef ONLY_FOR_LEX
-        string temp = "ADD\t+\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("ADD\t+\t"+to_string(yylineno));
     #else
         return ADD;
     #endif
 }
 "-" {
     #ifdef ONLY_FOR_LEX
-        string temp = "SUB\t-\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("SUB\t-\t"+to_string(yylineno));
     #else
         return SUB;
     #endif
 }
+"*" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("MUL\t*\t"+to_string(yylineno));
+    #else
+        return MUL;
+    #endif
+}
 "/" {
     #ifdef ONLY_FOR_LEX
-        string temp = "DIV\t/\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("DIV\t/\t"+to_string(yylineno));
     #else
         return DIV;
     #endif
 }
 "%" {
     #ifdef ONLY_FOR_LEX
-        string temp = "MOD\t%\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("MOD\t%\t"+to_string(yylineno));
     #else
         return MOD;
     #endif
 }
 ";" {
     #ifdef ONLY_FOR_LEX
-        string temp = "SEMICOLON\t;\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("SEMICOLON\t;\t"+to_string(yylineno));
     #else
         return SEMICOLON;
     #endif
 }
+":" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("COLON\t:\t"+to_string(yylineno));
+    #else
+        return COLON;
+    #endif
+}
+"," {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("COMMA\t,\t"+to_string(yylineno));
+    #else
+        return COMMA;
+    #endif
+}
+"'" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("QUOTATION\t;\t"+to_string(yylineno));
+    #else
+        return QUOTATION;
+    #endif
+}
 "(" {
     #ifdef ONLY_FOR_LEX
-        string temp = "LPAREN\t(\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
-    #else 
-        return LPAREN; 
+        DEBUG_FOR_LAB4("LPAREN\t(\t"+to_string(yylineno));
+    #else
+        return LPAREN;
     #endif
 }
 ")" {
     #ifdef ONLY_FOR_LEX
-        string temp = "RPAREN\t)\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("RPAREN\t)\t"+to_string(yylineno));
     #else
-        return RPAREN;
+    return RPAREN;
     #endif
 }
 "{" {
     #ifdef ONLY_FOR_LEX
         scope_num++;
         a.push_back(scope_num);
-        //cout << "{" << a.back() << endl;
         l_num++;
         string temp = "LBRACE\t{\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("LBRACE\t{\t"+to_string(yylineno));
     #else
         return LBRACE;
     #endif
@@ -406,67 +348,32 @@ commentend "*/"
 "}" {
     #ifdef ONLY_FOR_LEX
         a.pop_back();
-        //cout << "}" << a.back() << endl;
         r_num++;
-        string temp = "RBRACE\t}\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("RBRACE\t}\t"+to_string(yylineno));
     #else
         return RBRACE;
     #endif
 }
 "[" {
     #ifdef ONLY_FOR_LEX
-        string temp = "LSQUARE\t[\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("LSQUARE\t[\t"+to_string(yylineno));
     #else
         return LSQUARE;
-    #endif
+    #endif 
 }
 "]" {
     #ifdef ONLY_FOR_LEX
-        string temp = "RSQUARE\t]\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("RSQUARE\t]\t"+to_string(yylineno));
     #else
         return RSQUARE;
-    #endif
+    #endif 
 }
 "#" {
     #ifdef ONLY_FOR_LEX
-        string temp = "POUND\t#\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("POUND\t#\t"+to_string(yylineno));
     #else
         return POUND;
-    #endif
-}
-{ID} {
-    #ifdef ONLY_FOR_LEX
-        string m = yytext;
-        //cout << yytext << ":" << a.size() << endl;
-        int idnum = 0;
-        bool flag = 0;
-        for(int i = 0; i < id_count; i++)
-        {
-            if(table[i].idname == yytext && table[i].scope_num == a.back())
-            {
-                idnum = i + 1;
-                flag = 1;
-                break;
-            }
-        }
-        if(flag == 0)
-        {
-            table[id_count].idname = yytext;
-            if(a.size() != 0){
-                table[id_count].scope_num = a.back();
-            }
-            id_count++;
-            idnum = id_count;
-        }
-        string temp = "ID\t" + m + "\tlinenum:" + to_string(yylineno) + "\tIDcount:" + to_string(idnum);
-        DEBUG_FOR_LAB4(temp);
-    #else 
-        return ID;
-    #endif
+    #endif 
 }
 
 {OCT} {
@@ -476,13 +383,11 @@ commentend "*/"
         int all = 0;
         for(int i = 0; i < len; i++)
         {
-            //cout << i << ":" << (pow(8, (len - i - 1))) << ' ' << (a[i + 1] - '0') << endl;
             int temp1 = (pow(8, (len - i - 1)));
             int temp2 = (a[i + 1] - '0');
             all = all + temp1 * temp2;         
         }
-        string temp = "OCT\t" + to_string(all) + "(DEC)" + "\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("OCT\t" + to_string(all) + "(DEC)" + "\t" + to_string(yylineno));
     #else 
         return OCT;
     #endif
@@ -491,8 +396,7 @@ commentend "*/"
 {DECIMIAL} {
     #ifdef ONLY_FOR_LEX
         string a = yytext;
-        string temp = "DECIMIAL\t" + a + "\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("DECIMIAL\t" + a + "\t" + to_string(yylineno));
     #else 
         return DECIMIAL;
     #endif
@@ -518,18 +422,49 @@ commentend "*/"
             }
             all = all + temp1 * temp2;         
         }
-        string temp = "HEX\t" + to_string(all) + "(DEC)" + "\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("HEX\t" + to_string(all) + "(DEC)" + "\t" + to_string(yylineno));
     #else 
         return HEX;
+    #endif
+}
+
+{ID} {
+    #ifdef ONLY_FOR_LEX
+        string m = yytext;//ID
+        int idnum = 0;//ID所在域
+        bool flag = 0;//是否出现
+        //在符号表上遍历
+        for(int i = 0; i < id_count; i++)
+        {
+            //若表中出现过&&表中作用域=目前作用域
+            if(table[i].idname == yytext && table[i].scope_num == a.back())
+            {
+                //层数变化
+                idnum = i + 1;
+                flag = 1;
+                break;
+            }
+        }
+        //未出现
+        if(flag == 0)
+        {
+            table[id_count].idname = yytext;
+            if(a.size() != 0){
+                table[id_count].scope_num = a.back();
+            }
+            id_count++;
+            idnum = id_count;
+        }
+        DEBUG_FOR_LAB4("ID\t" + m + "\t" + to_string(yylineno) + "\t" + to_string(idnum));
+    #else 
+        return ID;
     #endif
 }
 
 {char} {
     #ifdef ONLY_FOR_LEX
         string a = yytext;
-        string temp = "CHARACTER\t" + a + "\tlinenum:" + to_string(yylineno);
-        DEBUG_FOR_LAB4(temp);
+        DEBUG_FOR_LAB4("CHARACTER\t" + a + "\t" + to_string(yylineno));
     #else 
         return CHARACTER;
     #endif
@@ -542,6 +477,7 @@ commentend "*/"
 
 #ifdef ONLY_FOR_LEX
 int main(int argc, char **argv){
+    
     if(argc != 5){
         fprintf(stderr, "Argument Not Enough");
         exit(EXIT_FAILURE);
@@ -556,6 +492,7 @@ int main(int argc, char **argv){
         fprintf(stderr, "No such file or directory: %s", argv[3]);
         exit(EXIT_FAILURE);
     }
+    fprintf(yyout,"[DEBUG LAB4]: 	%-12s%-12s%-12s%-12s\n","token","lexeme","lineno","idnum");
     yylex();
     return 0;
 }
