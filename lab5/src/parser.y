@@ -33,15 +33,16 @@
 %token INT VOID
 %token CONST 
 %token LPAREN RPAREN LBRACE RBRACE SEMICOLON COMMA
-%token ADD SUB MUL DIV MOD EQUAL GREATER LESS GREATEQUAL LESSEQUAL NOTEQUAL AND OR ASSIGN NOT
+%token ADD SUB MUL DIV MOD GREATER OR AND LESS ASSIGN EQUAL NOTEQUAL GREATEQUAL LESSEQUAL NOT
 %token RETURN
 %token LINECOMMENT COMMENTBEIGN COMMENTELEMENT COMMENTLINE COMMENTEND
 
 %nterm <stmttype> Stmts Stmt AssignStmt BlockStmt IfStmt ReturnStmt DeclStmt FuncDef WhileStmt ConstDeclStmt SignleStmt
-%nterm <exprtype> Exp AddExp Cond LOrExp PrimaryExp LVal RelExp LAndExp 
+%nterm <exprtype> Exp UnaryExp AddExp MulExp Cond LOrExp PrimaryExp LVal RelExp LAndExp 
 %nterm <type> Type 
 %nterm <Idlisttype> Idlist 
 %nterm <Fstype> FuncFParams
+%nterm <FRtype> FuncRParams
 %nterm <CIdstype> ConstIdList
 
 %precedence THEN
@@ -152,18 +153,84 @@ PrimaryExp
     |
     LPAREN Exp RPAREN{$$ = $2;}
     ;
-
-AddExp
+UnaryExp
     :
     PrimaryExp {$$ = $1;}
     |
-    AddExp ADD PrimaryExp
+    ID LPAREN RPAREN{
+        SymbolEntry *se;
+        se = identifiers->lookup($1);
+        if(se == nullptr)
+        {
+            fprintf(stderr, "Function \"%s\" is undefined\n", (char*)$1);
+            delete [](char*)$1;
+            assert(se != nullptr);
+        }
+        $$ = new FunctionCall(se, nullptr);
+        delete []$1;
+    }
+    |
+    ID LPAREN FuncRParams RPAREN{
+        SymbolEntry *se;
+        se = identifiers->lookup($1);
+        if(se == nullptr)
+        {
+            fprintf(stderr, "Function \"%s\" is undefined\n", (char*)$1);
+            delete [](char*)$1;
+            assert(se != nullptr);
+        }
+        $$ = new FunctionCall(se, $3);
+        delete []$1;
+    }
+    |
+    SUB UnaryExp {
+        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+        $$ = new SignleExpr(se, SignleExpr::SUB, $2);
+    }
+    |
+    NOT UnaryExp{
+        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+        $$ = new SignleExpr(se, SignleExpr::NOT, $2);
+    }
+    |
+    ADD UnaryExp{
+        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+        $$ = new SignleExpr(se, SignleExpr::ADD, $2);
+    }
+    ;
+MulExp
+    :
+    UnaryExp {$$ = $1;}
+    |
+    MulExp MUL UnaryExp
+    {
+        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+        $$ = new BinaryExpr(se, BinaryExpr::MUL, $1, $3);
+    }
+    |
+    MulExp DIV UnaryExp
+    {
+        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+        $$ = new BinaryExpr(se, BinaryExpr::DIV, $1, $3);
+    }
+    |
+    MulExp MOD UnaryExp
+    {
+        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+        $$ = new BinaryExpr(se, BinaryExpr::MOD, $1, $3);
+    }
+    ;  
+AddExp
+    :
+    MulExp {$$ = $1;}
+    |
+    AddExp ADD MulExp
     {
         SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
         $$ = new BinaryExpr(se, BinaryExpr::ADD, $1, $3);
     }
     |
-    AddExp SUB PrimaryExp
+    AddExp SUB MulExp
     {
         SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
         $$ = new BinaryExpr(se, BinaryExpr::SUB, $1, $3);
@@ -329,7 +396,23 @@ Idlist
         delete []$3;
     }
     ;
-
+FuncRParams
+    :
+    Exp
+    {
+        std::vector<ExprNode*> t;
+        t.push_back($1);
+        FuncRParams *temp = new FuncRParams(t);
+        $$ = temp;
+    }
+    |
+    FuncRParams COMMA Exp
+    {
+        FuncRParams *temp = $1;
+        temp -> Exprs.push_back($3);
+        $$ = temp;
+    }
+    ;
 FuncFParams
     :
     Type ID

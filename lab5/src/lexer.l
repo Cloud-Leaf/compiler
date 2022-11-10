@@ -315,10 +315,6 @@ commentline (\r\n|\n|\r)
 }
 "{" {
     #ifdef ONLY_FOR_LEX
-        scope_num++;
-        a.push_back(scope_num);
-        l_num++;
-        string temp = "LBRACE\t{\tlinenum:" + to_string(yylineno);
         DEBUG_FOR_LAB4("LBRACE\t{\t"+to_string(yylineno));
     #else
         return LBRACE;
@@ -326,8 +322,6 @@ commentline (\r\n|\n|\r)
 }
 "}" {
     #ifdef ONLY_FOR_LEX
-        a.pop_back();
-        r_num++;
         DEBUG_FOR_LAB4("RBRACE\t}\t"+to_string(yylineno));
     #else
         return RBRACE;

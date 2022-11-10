@@ -29,14 +29,11 @@ void BinaryExpr::output(int level)
         case SUB:
             op_str = "sub";
             break;
-        case MUL:
-            op_str = "mul";
+        case AND:
+            op_str = "and";
             break;
-        case DIV:
-            op_str = "div";
-            break;
-        case MOD:
-            op_str = "mod";
+        case OR:
+            op_str = "or";
             break;
         case EQUAL:
             op_str = "equal";
@@ -56,11 +53,14 @@ void BinaryExpr::output(int level)
         case NOTEQUAL:
             op_str = "notequal";
             break;
-        case AND:
-            op_str = "and";
+        case MUL:
+            op_str = "mul";
             break;
-        case OR:
-            op_str = "or";
+        case DIV:
+            op_str = "div";
+            break;
+        case MOD:
+            op_str = "mod";
             break;
     }
     fprintf(yyout, "%*cBinaryExpr\top: %s\n", level, ' ', op_str.c_str());
